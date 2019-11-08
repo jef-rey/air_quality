@@ -1,0 +1,88 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r}
+include <- function(library_name){
+  if ( !(library_name %in% installed.packages()))
+    install.packages((library_name))
+  library(library_name, character.only = TRUE)
+}
+include("rvest")
+include("tidyr")
+include("ggplot2")
+
+```
+
+
+pulling in air quality data
+```{r}
+data("airquality")
+air <- as_tibble(airquality)
+cor.test(air$Ozone,air$Temp)
+```
+now that we have a correlation test, lets visual some of this data with `ggplot`
+```{r}
+
+graph <- ggplot(air, aes(x = Temp, y = Ozone)) + geom_point()
+print(graph)
+
+```
+
+we want to get a statistical analysis for our variables
+```{r}
+
+simple_model <- lm(air, formula=Ozone~Temp)
+summary(simple_model)
+```
+
+
+now we're going to step up our game and build a more sophisticated model
+
+we're going to need a couple vocabulary terms:
+multivariate models - trying to predict more than just one variable, this model measures multiple variables at one time. 
+
+multiple linear regression - instead of using one factor to help us in our prediction, we;re going to use mulitple variables
+
+
+we're going to create a new model
+
+```{r}
+quality_model <- lm(air, formula=Ozone ~ Solar.R + Wind + Temp + Month + Day)
+summary(quality_model)
+```
+since we have multiple variables now, we're not just talking about that one variable in isolation, we're considering if that variable would even matter if it were in the model anyway. for example, the variable `Day` has no need to be in the data at all. in fact, the model might be better if we didn't have `Day` in there at all. It is not a significant factor in predicting air quality.
+however, using the adjusted r-squared value of 0.607 we can say that these variables together are a significant predictor of air quality.
+
+
+we want to refine our model, and get rid of any extraneous non-dependent variable.
+
+```{r}
+
+quality_model2 <- lm(air, formula=Ozone ~ Solar.R + Wind + Temp + Month)
+summary(quality_model2)
+```
+
+these updated values show that we are showing very large significant indicators for predictors of air quality
+
+(don't have data for most months of the year, and it's only for 1973, and the wind was only recorded at 0700 and 1000 hours at la guardia. both of those mean that this data is not as tight as we want it )
+
+
+```{r}
+quality_model3 <- lm(air, formula=Ozone ~ Solar.R + Wind + Temp)
+summary(quality_model3)
+```
+
+
+multiple regression = y_hat = beta_0  + beta_1 x_1 + beta_2 x_2
+
+`confint` will provide confidence intervals
+
+```{r}
+confint(quality_model3, level=0.95)
+```
+
